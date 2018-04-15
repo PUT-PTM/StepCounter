@@ -55,6 +55,12 @@ dkms.conf
 StdPeriph_Driver*/
 USB_Device_Library*/
 USB_HOST_Library*/
+
+.settings*/
+Debug*/
+startup*/
+
+
 <<<<<<< HEAD
 USB_OTG_Driver*/
 =======
