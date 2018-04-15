@@ -52,4 +52,7 @@ Mkfile.old
 dkms.conf
 
 
-StdPeriph_Driver/
+StdPeriph_Driver\
+USB_Device_Library\
+USB_HOST_Library\
+USB_OTG_Driver\
