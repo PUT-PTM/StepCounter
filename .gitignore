@@ -51,6 +51,7 @@ Module.symvers
 Mkfile.old
 dkms.conf
 
+*.cfg
 
 StdPeriph_Driver*/
 USB_Device_Library*/
@@ -60,9 +61,10 @@ USB_HOST_Library*/
 Debug*/
 startup*/
 
-CMSIS*/
-Utilities*/
-
+.gitattributes
+LinkerScript.ld
+.cproject
+  
 <<<<<<< HEAD
 USB_OTG_Driver*/
 =======
