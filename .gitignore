@@ -60,6 +60,8 @@ USB_HOST_Library*/
 Debug*/
 startup*/
 
+CMSIS*/
+Utilities*/
 
 <<<<<<< HEAD
 USB_OTG_Driver*/
