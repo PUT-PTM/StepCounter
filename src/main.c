@@ -14,20 +14,23 @@
 #include "tm_stm32f4_lis302dl_lis3dsh.h"
 #include "SPI.h"
 
-double temp=0;
+//z biblioteki DSP
+#include "arm_math.h"
 
-int16_t X;
-int16_t Y;
-int16_t Z;
+arm_rfft_instance_f32 S;
+
+int32_t X;
+int32_t Y;
+int32_t Z;
 
 int main(void)
 {
 	initAccelerometr();
 
 	typedef struct {
-		int16_t X;
-		int16_t Y;
-		int16_t Z;
+		int32_t X;
+		int32_t Y;
+		int32_t Z;
 	} TM_LIS302DL_LIS3DSH_t;
 
 	TM_LIS302DL_LIS3DSH_t Axes_Data;
@@ -40,6 +43,10 @@ int main(void)
 		Y = Axes_Data.Y;
 		Z = Axes_Data.Z;
 
+		//korzystanie z biblioteki
+		int32_t buffer_input[];
+		int32_t buffer_output[];
+		arm_rfft_f32(&S,buffer_input,buffer_output)
 
 	}
 }
