@@ -14,11 +14,18 @@
 #include "tm_stm32f4_lis302dl_lis3dsh.h"
 #include "SPI.h"
 
+#include "arm_math.h"
+
 //z biblioteki DSP
 
 int32_t X;
 int32_t Y;
 int32_t Z;
+
+double re[64];
+const int N = 64;
+uint8_t sample = 0;
+
 
 int main(void)
 {
@@ -35,10 +42,12 @@ int main(void)
 
 	for (;;) {
 
+		// konieczne bedzie przerwanie obslugujace zliczanie wartosci akcelerometru
 		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
-		X = Axes_Data.X;
-		Y = Axes_Data.Y;
-		Z = Axes_Data.Z;
+		if (sample < N)
+			re[sample++] = Axes_Data.Y;
+		//else
+			// ustawienie flagi FFT_Flag = 1;
 
 
 	}
