@@ -15,9 +15,6 @@
 #include "SPI.h"
 
 //z biblioteki DSP
-#include "arm_math.h"
-
-arm_rfft_instance_f32 S;
 
 int32_t X;
 int32_t Y;
@@ -43,10 +40,6 @@ int main(void)
 		Y = Axes_Data.Y;
 		Z = Axes_Data.Z;
 
-		//korzystanie z biblioteki
-		int32_t buffer_input[];
-		int32_t buffer_output[];
-		arm_rfft_f32(&S,buffer_input,buffer_output)
 
 	}
 }
