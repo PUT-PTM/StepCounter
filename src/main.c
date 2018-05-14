@@ -23,32 +23,65 @@ int32_t Y;
 int32_t Z;
 
 double re[64];
+int FFT_Flag = 0;
 const int N = 64;
 uint8_t sample = 0;
+TM_LIS302DL_LIS3DSH_t Axes_Data;
+TM_LIS302DL_LIS3DSH_Device_t IMU_Type;
+
+
+
+// przerwanie!
+void TIM3_IRQHandler(void) {
+	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
+
+		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
+		if (sample < N)
+			re[sample++] = Axes_Data.Y;
+		else
+			FFT_Flag = 1;
+
+		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	}
+}
+
+
 
 
 int main(void)
 {
 	initAccelerometr();
 
-	typedef struct {
-		int32_t X;
-		int32_t Y;
-		int32_t Z;
-	} TM_LIS302DL_LIS3DSH_t;
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
+	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
+	TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
+	TIM_TimeBaseStructure.TIM_Prescaler = 60 - 1;
+	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
+	TIM_TimeBaseStructure.TIM_CounterMode =  TIM_CounterMode_Up ;
+	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
+	TIM_Cmd(TIM3, ENABLE);
 
-	TM_LIS302DL_LIS3DSH_t Axes_Data;
+	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_1);
+	NVIC_InitTypeDef NVIC_InitStructure;
+
+	NVIC_InitStructure.NVIC_IRQChannel = TIM3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0x00;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
+	NVIC_Init(&NVIC_InitStructure);
+
+	TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
+	TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+
 
 
 	for (;;) {
+		if (FFT_Flag) {
+			TIM_ITConfig(TIM3, TIM_IT_Update, DISABLE);
+			//fft
 
-		// konieczne bedzie przerwanie obslugujace zliczanie wartosci akcelerometru
-		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
-		if (sample < N)
-			re[sample++] = Axes_Data.Y;
-		//else
-			// ustawienie flagi FFT_Flag = 1;
-
-
+			FFT_Flag = 0;
+			TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
+		}
 	}
 }
