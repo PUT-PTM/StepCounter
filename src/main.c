@@ -86,7 +86,7 @@ int main(void)
 	for (;;) {
 		if (FFT_Flag) {
 			TIM_ITConfig(TIM3, TIM_IT_Update, DISABLE);
-
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
 			for(int i=0; i<N; i++){
 				// rzutowanie double na float32
 				re[i] = (float32_t) temp[i];
@@ -97,7 +97,7 @@ int main(void)
 			arm_rfft_instance_f32 S;
 			arm_cfft_radix4_instance_f32 S_CFFT;
 			arm_rfft_init_f32(&S, &S_CFFT, 128, 0, 1); //zainicjowanie jej
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+
 			//widmo fft
 			// &S - wskaznik do struktury
 			// re - bufor wejsciowy [128]
@@ -117,12 +117,6 @@ int main(void)
 			// maxvalue - najwieksza wartosc w buforze
 			// maxvalueindex - indeks najwiekszej wartosci
 			arm_max_f32(im_mag, 128, &maxvalue, &maxvalueindex);
-
-
-			//for(int i=0;i<128;i++)
-			//{
-			//	printf("%d, ",im_mag[i]);
-			//}
 
 			FFT_Flag = 0;
 			TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
