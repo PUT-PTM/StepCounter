@@ -15,20 +15,19 @@
 #include "SPI.h"
 
 #include "arm_math.h"
-
 //z biblioteki DSP
 
-int32_t X;
-int32_t Y;
-int32_t Z;
+//#define COMPLEX_NUMBER 128
 
-float32_t re[64] = {0};
-float32_t im[64] = {0};
-float32_t im_mag[64] = {0};
+double temp[128] = {0};
+float32_t re[128] = {0};
+float32_t im[256] = {0};
+float32_t im_mag[128] = {0};
 int FFT_Flag = 0;
-const int N = 64;
+const int N = 128;
 uint8_t results = 0;
-
+float32_t maxvalue;
+uint32_t maxvalueindex;
 arm_rfft_instance_f32 S;
 
 TM_LIS302DL_LIS3DSH_t Axes_Data;
@@ -41,8 +40,9 @@ void TIM3_IRQHandler(void) {
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
 
 		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
-		if (results < N)
-			re[results++] = Axes_Data.Y;
+		if (results < N){
+			temp[results++] = Axes_Data.Y;
+		}
 		else
 			FFT_Flag = 1;
 
@@ -56,11 +56,14 @@ void TIM3_IRQHandler(void) {
 int main(void)
 {
 	initAccelerometr();
+	initGPIODiodes();
+
+
 
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
-	TIM_TimeBaseStructure.TIM_Period = 10000 - 1;
-	TIM_TimeBaseStructure.TIM_Prescaler = 60 - 1;
+	TIM_TimeBaseStructure.TIM_Period = 2624;
+	TIM_TimeBaseStructure.TIM_Prescaler = 249; // 128 razy na sekunde
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode =  TIM_CounterMode_Up ;
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
@@ -83,13 +86,43 @@ int main(void)
 	for (;;) {
 		if (FFT_Flag) {
 			TIM_ITConfig(TIM3, TIM_IT_Update, DISABLE);
-			//fft
-			/*
-		    const arm_rfft_instance_f32 rfft_inst;
-		    arm_rfft_init_f32();
-		    arm_rfft_f32(&rfft_inst, re, im);
-			//arm_rfft_f32(const arm_rfft_instance_f32 * S, re, im);
-			 */
+
+			for(int i=0; i<N; i++){
+				// rzutowanie double na float32
+				re[i] = (float32_t) temp[i];
+			}
+			//----- FFT -----
+
+			//tworzenie instancji struktury
+			arm_rfft_instance_f32 S;
+			arm_cfft_radix4_instance_f32 S_CFFT;
+			arm_rfft_init_f32(&S, &S_CFFT, 128, 0, 1); //zainicjowanie jej
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+			//widmo fft
+			// &S - wskaznik do struktury
+			// re - bufor wejsciowy [128]
+			// im - bufor wyjsciowy [256] (liczby zespolone)
+			arm_rfft_f32(&S, re, im);
+
+
+			//wyliczanie modulu liczby zespolonej
+			// im - bufor wejsciowy [256] (liczby zespolone)
+			// im_mag - bufor wyjsciowy, zawierajacy moduly liczb [128]
+			// 128 - ilosc liczb zespolonych
+			arm_cmplx_mag_f32(im, im_mag, 128);
+
+			//szukanie maksymalnej wartosci, zapisywanie jej indeksu
+			// im_mag - bufor wejsciowy [128]
+			// 128 - ilosc liczb zespolonych
+			// maxvalue - najwieksza wartosc w buforze
+			// maxvalueindex - indeks najwiekszej wartosci
+			arm_max_f32(im_mag, 128, &maxvalue, &maxvalueindex);
+
+
+			//for(int i=0;i<128;i++)
+			//{
+			//	printf("%d, ",im_mag[i]);
+			//}
 
 			FFT_Flag = 0;
 			TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
