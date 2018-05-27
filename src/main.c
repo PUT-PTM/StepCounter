@@ -86,10 +86,11 @@ int main(void)
 	for (;;) {
 		if (FFT_Flag) {
 			TIM_ITConfig(TIM3, TIM_IT_Update, DISABLE);
-			GPIO_SetBits(GPIOD, GPIO_Pin_15);
+
 			for(int i=0; i<N; i++){
 				// rzutowanie double na float32
 				re[i] = (float32_t) temp[i];
+				im[i] = 0;
 			}
 			//----- FFT -----
 
@@ -103,7 +104,7 @@ int main(void)
 			// re - bufor wejsciowy [128]
 			// im - bufor wyjsciowy [256] (liczby zespolone)
 			arm_rfft_f32(&S, re, im);
-
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
 
 			//wyliczanie modulu liczby zespolonej
 			// im - bufor wejsciowy [256] (liczby zespolone)
