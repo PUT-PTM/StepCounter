@@ -18,18 +18,21 @@
 
 #include "arm_math.h"
 
-const int N = 128;
+#define N 128
+
 int FFT_Flag = 0;
 
-q31_t sample[128] = {0};
-q31_t samplefft[128] = {0};
-q31_t comp[256] = {0};
-q31_t comp_mag[128] = {0};
+q31_t sample[N] = {0};
+q31_t samplefft[N] = {0};
+q31_t comp[N] = {0};
+q31_t compfft[N] = {0};
+q31_t mag[N] = {0};
+q31_t x[2*N] = {0};
 
 uint8_t results = 0;
 q31_t maxvalue;
 uint32_t maxvalueindex;
-arm_rfft_instance_f32 S;
+volatile arm_status status;
 
 TM_LIS302DL_LIS3DSH_t Axes_Data;
 TM_LIS302DL_LIS3DSH_Device_t IMU_Type;
@@ -68,7 +71,7 @@ int main(void)
 			//tworzenie instancji struktury
 			arm_rfft_instance_q31 S;
 			arm_cfft_radix4_instance_q31 S_CFFT;
-			arm_rfft_init_q31(&S, &S_CFFT, N, 0, 1); //zainicjowanie jej
+			status = arm_rfft_init_q31(&S, &S_CFFT, (uint32_t) N, 0, 1); //zainicjowanie jej
 
 			//widmo fft
 			// &S - wskaznik do struktury
@@ -81,18 +84,33 @@ int main(void)
 				samplefft[i] = sample[i];
 			}
 
+			for(int i=0;i<N;i++){
+				compfft[i] = comp[i];
+			}
+
+			int its=0;
+			int itc=0;
+			for(int i=0;i<2*N;i++){
+				if(i%2==0)
+				x[i] = sample[its++];
+				else
+				x[i] = comp[itc++];
+			}
+
+
 			//wyliczanie modulu liczby zespolonej
 			// comp - bufor wejsciowy [256] (liczby zespolone)
 			// comp_mag - bufor wyjsciowy, zawierajacy moduly liczb [128]
 			// 128 - ilosc liczb zespolonych
-			arm_cmplx_mag_q31(comp, comp_mag, N);
+			arm_cmplx_mag_q31(x, mag, N);
+
 
 			//szukanie maksymalnej wartosci, zapisywanie jej indeksu
 			// comp_mag - bufor wejsciowy [128]
 			// 128 - ilosc liczb zespolonych
 			// maxvalue - najwieksza wartosc w buforze
 			// maxvalueindex - indeks najwiekszej wartosci
-			arm_max_q31(comp_mag, 128, &maxvalue, &maxvalueindex);
+			//arm_max_q31(mag, 128, &maxvalue, &maxvalueindex);
 
 			Clear();
 
@@ -109,7 +127,7 @@ void Clear(){
 	for(int i=0;i<N;i++){
 		sample[i] = 0;
 		comp[i] = 0;
-		comp_mag[i] = 0;
+		mag[i] = 0;
 		}
 	results = 0;
 }
