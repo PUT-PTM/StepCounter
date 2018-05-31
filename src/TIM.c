@@ -1,6 +1,6 @@
 #include "stm32f4_discovery.h"
 
-void InitTimer(){
+void initTimer3(){
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	TIM_TimeBaseStructure.TIM_Period = 2624;

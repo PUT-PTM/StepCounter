@@ -3,4 +3,4 @@
 
 void initAccelerometr(void);
 
-#endif;
+#endif
