@@ -1,14 +1,3 @@
-/**
-  ******************************************************************************
-  * @file    main.c
-  * @author  Ac6
-  * @version V1.0
-  * @date    01-December-2013
-  * @brief   Default main function.
-  ******************************************************************************
-*/
-
-
 #include "stm32f4xx.h"
 #include "stm32f4_discovery.h"
 #include "tm_stm32f4_lis302dl_lis3dsh.h"
@@ -22,21 +11,20 @@
 
 int FFT_Flag = 0;
 
-q31_t sample[N] = {0};
-q31_t samplefft[N] = {0};
-q31_t comp[N] = {0};
-q31_t compfft[N] = {0};
-q31_t mag[N] = {0};
-q31_t x[2*N] = {0};
+double sample[N] = {0.0};
+double samplefft[N] = {0.0};
+float32_t comp[2*N] = {0.0};
+float32_t compfft[2*N] = {0.0};
+double mag[N] = {0.0};
 
 uint8_t results = 0;
-q31_t maxvalue;
+int itsc=0;
+double maxvalue;
 uint32_t maxvalueindex;
-volatile arm_status status;
+double frequency = 0.0;
 
 TM_LIS302DL_LIS3DSH_t Axes_Data;
 TM_LIS302DL_LIS3DSH_Device_t IMU_Type;
-
 
 // przerwanie!
 void TIM3_IRQHandler(void) {
@@ -45,11 +33,11 @@ void TIM3_IRQHandler(void) {
 		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
 		if (results < N){
 
-			sample[results++] = Axes_Data.Y;
+			sample[results++] = (double) Axes_Data.Y;
+
 		}
 		else
 			FFT_Flag = 1;
-
 		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 	}
 }
@@ -68,53 +56,37 @@ int main(void)
 
 			//----- FFT -----
 
+			for(int i=0; i<2*N; i+=2){
+				comp[i] = (float) sample[itsc++];
+			}
+			itsc=0;
+
 			//tworzenie instancji struktury
-			arm_rfft_instance_q31 S;
-			arm_cfft_radix4_instance_q31 S_CFFT;
-			status = arm_rfft_init_q31(&S, &S_CFFT, (uint32_t) N, 0, 1); //zainicjowanie jej
+			arm_cfft_radix4_instance_f32 S;
+			arm_cfft_radix4_init_f32(&S, N/2, 0, 1); //zainicjowanie jej
 
 			//widmo fft
-			// &S - wskaznik do struktury
-			// sample - bufor wejsciowy [128]
-			// comp - bufor wyjsciowy [256] (liczby zespolone)
-			arm_rfft_q31(&S, sample, comp);
+			arm_cfft_radix4_f32(&S, comp);
 
-			for(int i=0;i<N;i++){
-				//sprawdzamy jak wyglada tablica z probkami po wykonaniu fft
-				samplefft[i] = sample[i];
-			}
+			comp[0] = 0;
 
-			for(int i=0;i<N;i++){
+			for(int i=0;i<2*N;i++){
 				compfft[i] = comp[i];
 			}
 
-			int its=0;
-			int itc=0;
-			for(int i=0;i<2*N;i++){
-				if(i%2==0)
-				x[i] = sample[its++];
-				else
-				x[i] = comp[itc++];
-			}
-
-
 			//wyliczanie modulu liczby zespolonej
-			// comp - bufor wejsciowy [256] (liczby zespolone)
-			// comp_mag - bufor wyjsciowy, zawierajacy moduly liczb [128]
-			// 128 - ilosc liczb zespolonych
-			arm_cmplx_mag_q31(x, mag, N);
-
+			arm_cmplx_mag_squared_f32(comp, mag, N);
+			mag[0] = 0;
 
 			//szukanie maksymalnej wartosci, zapisywanie jej indeksu
-			// comp_mag - bufor wejsciowy [128]
-			// 128 - ilosc liczb zespolonych
-			// maxvalue - najwieksza wartosc w buforze
-			// maxvalueindex - indeks najwiekszej wartosci
-			//arm_max_q31(mag, 128, &maxvalue, &maxvalueindex);
+			arm_max_f32(mag, N, &maxvalue, &maxvalueindex);
+
+			frequency = (double)maxvalueindex * 2.0 / (double)N;
+
 
 			Clear();
 
-			GPIO_SetBits(GPIOD, GPIO_Pin_15); //testowe zapalenie diody
+			GPIO_SetBits(GPIOD, GPIO_Pin_15);
 			FFT_Flag = 0;
 			TIM_ITConfig(TIM3, TIM_IT_Update, ENABLE);
 		}
@@ -127,7 +99,7 @@ void Clear(){
 	for(int i=0;i<N;i++){
 		sample[i] = 0;
 		comp[i] = 0;
-		mag[i] = 0;
 		}
 	results = 0;
 }
+
