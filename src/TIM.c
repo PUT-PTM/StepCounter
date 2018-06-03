@@ -4,7 +4,7 @@ void initTimer3(){
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 	TIM_TimeBaseInitTypeDef TIM_TimeBaseStructure;
 	TIM_TimeBaseStructure.TIM_Period = 2624;
-	TIM_TimeBaseStructure.TIM_Prescaler = 249; // 128 razy na sekunde
+	TIM_TimeBaseStructure.TIM_Prescaler = 124;
 	TIM_TimeBaseStructure.TIM_ClockDivision = TIM_CKD_DIV1;
 	TIM_TimeBaseStructure.TIM_CounterMode =  TIM_CounterMode_Up ;
 	TIM_TimeBaseInit(TIM3, &TIM_TimeBaseStructure);
