@@ -9,6 +9,10 @@
 
 #include "arm_math.h"
 
+typedef enum {
+	false, true
+} bool;
+
 #define N 64
 #define freq 128
 extern int FFT_Flag = 0;
@@ -28,8 +32,6 @@ double frequency = 0;
 
 TM_LIS302DL_LIS3DSH_t Axes_Data;
 TM_LIS302DL_LIS3DSH_Device_t IMU_Type;
-
-
 
 // przerwanie!
 void TIM3_IRQHandler(void) {
@@ -86,13 +88,13 @@ int main(void)
 			//czestotliwosc
 			frequency = (double)maxvalueindex * (double)freq / (double)(N/2) ;
 
-			if(maxvalueindex==1&&maxvalue>1000000000){
+			if(maxvalueindex==1&&maxvalue>540000000&&maxvalue<2500000000){
 				if(PAUSE==0){
 					//zliczanie krokow
 					sendStep(++STEPS);
 					PAUSE=1;
 				} else PAUSE = 0;
-			}
+			} else PAUSE = 0;
 
 			Clear();
 
