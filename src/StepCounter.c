@@ -5,15 +5,14 @@
 #include "StepCounter.h"
 #include "Inits.h"
 
-#define N 64
-extern int STEPS = 0;
-extern int PAUSE = 0;
+#define N 64 	//ilosc probek
+int STEPS = 0;
+int8_t PAUSE = 0;
 
-double sample[N] = {0.0};
-float32_t comp[2*N] = {0.0};
-double mag[N] = {0.0};
+double sample[N] = {0.0};		//probki
+float32_t comp[2*N] = {0.0};	//liczby zespolone
+double mag[N] = {0.0};			//magnitudy
 uint8_t results = 0;
-int itsc=0;
 double maxvalue;
 uint32_t maxvalueindex;
 
@@ -30,7 +29,10 @@ void TIM3_IRQHandler(void) {
 	if (TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET) {
 		TM_LIS302DL_LIS3DSH_ReadAxes(&Axes_Data);
 		if (results < N){
-			sample[results++] = (double) Axes_Data.Y;
+			double x = Axes_Data.X;
+			double y = Axes_Data.Y;
+			double z = Axes_Data.Z;
+			sample[results++] = x + y + z;
 		}
 		else CheckStep();
 		TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
@@ -42,10 +44,11 @@ void CheckStep(){
 	TIM_ITConfig(TIM3, TIM_IT_Update, DISABLE);
 
 	//----- FFT -----
+
+	uint8_t it=0;
 	for(int i=0; i<2*N; i+=2){
-		comp[i] = (float) sample[itsc++];
+		comp[i] = (float) sample[it++];
 	}
-	itsc=0;
 
 	//tworzenie instancji struktury
 	arm_cfft_radix4_instance_f32 S;
@@ -62,11 +65,12 @@ void CheckStep(){
 	//szukanie maksymalnej wartosci, zapisywanie jej indeksu
 	arm_max_f32(mag, N, &maxvalue, &maxvalueindex);
 
-	if(maxvalueindex==1&&maxvalue>540000000&&maxvalue<2500000000){
+	//if(maxvalueindex==1 && maxvalue>540000000 && maxvalue<2500000000){
+	if(mag[2]>2500000000){
 		if(PAUSE==0){
 			//zliczanie krokow
 			sendStep(++STEPS);
-			PAUSE=1;
+			PAUSE=1; // odczekanie 0.25s
 		} else PAUSE = 0;
 	} else PAUSE = 0;
 
@@ -78,6 +82,7 @@ void CheckStep(){
 
 
 void Clear(){
+	//czysci tablice
 	for(int i=0;i<N;i++){
 		sample[i] = 0;
 		}
@@ -89,5 +94,6 @@ void Clear(){
 
 
 void sendStep(int step){
+	//wysyla inta do wyswietlacza
 	tm1637DisplayInt(step);
 }

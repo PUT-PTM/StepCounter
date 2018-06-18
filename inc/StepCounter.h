@@ -1,4 +1,3 @@
-
 #ifndef STEPCOUNTER_H_
 #define STEPCOUNTER_H_
 
